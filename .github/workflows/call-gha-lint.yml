@@ -1,3 +1,4 @@
+# This workflow is for newly created workflows. And also tests gha-lint itself.
 on:
   # By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened.
   # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
@@ -9,9 +10,6 @@ on:
       - reopened
       # Manually trigger this workflow to pass required status check
       - ready_for_review
-    paths:
-      - ".github/workflows/gha-lint.yml"
-      - ".github/workflows/test-gha-lint.yml"
 jobs:
   call-gha-lint:
     permissions:
