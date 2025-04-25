@@ -1,0 +1,114 @@
+name: Lint GHA workflow files
+on: workflow_call
+jobs:
+  lint:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Install pinact and ghatm
+        shell: bash
+        run: |
+          set -x
+          VERSION=1.6.0
+          TARGET=linux_amd64
+          SHA256_SUM=5562dfae2b70b9a14ba6bac99c691bec0bff41951411c713b5ea3fdbd28fbcc1
+          curl --silent --show-error --fail --connect-timeout 3 --max-time 10 --retry 3 \
+            --location --remote-name \
+            "https://github.com/suzuki-shunsuke/pinact/releases/download/v${VERSION}/pinact_${TARGET}.tar.gz"
+          echo "${SHA256_SUM} pinact_${TARGET}.tar.gz" | sha256sum -c
+          tar --extract --gzip --file "pinact_${TARGET}.tar.gz" --verbose
+          sudo install pinact /usr/local/bin/pinact
+
+          VERSION=0.3.4
+          TARGET=linux_amd64
+          SHA256_SUM=8724d5946f5f62defa01d17b5651629eb9ff47963f0d2114dd2da30c0bad7205
+          curl --silent --show-error --fail --connect-timeout 3 --max-time 10 --retry 3 \
+            --location --remote-name \
+            "https://github.com/suzuki-shunsuke/ghatm/releases/download/v${VERSION}/ghatm_${TARGET}.tar.gz"
+          echo "${SHA256_SUM} ghatm_${TARGET}.tar.gz" | sha256sum -c
+          tar --extract --gzip --file "ghatm_${TARGET}.tar.gz" --verbose
+          sudo install ghatm /usr/local/bin/ghatm
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.head_ref }}
+          sparse-checkout: .github
+
+      - name: Run pinact lint and capture diff
+        id: pinact
+        shell: bash
+        run: |
+          set -x
+          PINACT_DIFF_FILE="$(mktemp)"
+          echo "diff_file=${PINACT_DIFF_FILE}" >> "${GITHUB_OUTPUT}"
+
+          pinact run
+
+          git diff > "${PINACT_DIFF_FILE}"
+
+          if [[ -s "${PINACT_DIFF_FILE}" ]]; then
+            echo "has_changes=true" >> "${GITHUB_OUTPUT}"
+            cat "${PINACT_DIFF_FILE}"
+          else
+            echo "has_changes=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+          git reset --hard HEAD
+
+      - name: Run ghatm lint and capture diff
+        id: ghatm
+        shell: bash
+        run: |
+          set -x
+          GHATM_DIFF_FILE="$(mktemp)"
+          echo "diff_file=${GHATM_DIFF_FILE}" >> "${GITHUB_OUTPUT}"
+
+          ghatm set --timeout-minutes 5
+
+          git diff > "${GHATM_DIFF_FILE}"
+
+          if [[ -s "${GHATM_DIFF_FILE}" ]]; then
+            echo "has_changes=true" >> "${GITHUB_OUTPUT}"
+            cat "${GHATM_DIFF_FILE}"
+          else
+            echo "has_changes=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+          git reset --hard HEAD
+
+      - name: Install reviewdog
+        if: steps.pinact.outputs.has_changes == 'true' || steps.ghatm.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          set -x
+          VERSION=0.20.3
+          TARGET=Linux_x86_64
+          SHA256_SUM=2c634dbc00bd4a86e4d4c47029d2af9185fab06643a9df0ae10e7c4d644781b6
+          curl --silent --show-error --fail --connect-timeout 3 --max-time 10 --retry 3 \
+            --location --remote-name \
+            "https://github.com/reviewdog/reviewdog/releases/download/v${VERSION}/reviewdog_${VERSION}_${TARGET}.tar.gz"
+          echo "${SHA256_SUM} reviewdog_${VERSION}_${TARGET}.tar.gz" | sha256sum -c
+          tar --extract --gzip --file "reviewdog_${VERSION}_${TARGET}.tar.gz" --verbose
+          sudo install reviewdog /usr/local/bin/reviewdog
+
+      - name: Report pinact suggestions with reviewdog
+        if: steps.pinact.outputs.has_changes == 'true'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -x
+          reviewdog -f=diff -f.diff.strip=1 -name="pinact" -reporter=github-pr-review < ${{ steps.pinact.outputs.diff_file }}
+
+      - name: Report ghatm suggestions with reviewdog
+        if: steps.ghatm.outputs.has_changes == 'true'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -x
+          reviewdog -f=diff -f.diff.strip=1 -name="ghatm" -reporter=github-pr-review < ${{ steps.ghatm.outputs.diff_file }}
