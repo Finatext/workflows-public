@@ -10,11 +10,12 @@ on:
       # Manually trigger this workflow to pass required status check
       - ready_for_review
     paths:
-      - ".github/workflows/gha-autofix.yml"
+      - ".github/workflows/gha-lint.yml"
+      - ".github/workflows/test-gha-lint.yml"
 jobs:
-  call-gha-autofix:
+  call-gha-lint:
     permissions:
-      contents: write
-      pull-requests: write
-    uses: ./.github/workflows/gha-autofix.yml
+      contents: read
+      checks: write
+    uses: ./.github/workflows/gha-lint.yml
     secrets: inherit
