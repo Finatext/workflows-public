@@ -1,0 +1,20 @@
+on:
+  # By default, a workflow only runs when a pull_request event's activity type is opened, synchronize, or reopened.
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
+  # So we add default event types and ready_for_review type here.
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      # Manually trigger this workflow to pass required status check
+      - ready_for_review
+    paths:
+      - ".github/workflows/gha-autofix.yml"
+jobs:
+  call-gha-autofix:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/gha-autofix.yml
+    secrets: inherit
