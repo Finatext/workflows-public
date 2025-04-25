@@ -16,6 +16,6 @@ jobs:
   call-gha-lint:
     permissions:
       contents: read
-      checks: write
+      pull-requests: write
     uses: ./.github/workflows/gha-lint.yml
     secrets: inherit

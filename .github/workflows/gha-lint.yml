@@ -6,7 +6,7 @@ jobs:
     if: github.event.pull_request.draft == false
     permissions:
       contents: read
-      checks: write
+      pull-requests: write
     steps:
       - name: Install pinact and ghatm
         shell: bash
@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           set -x
-          reviewdog -f=diff -f.diff.strip=1 -name="pinact" -reporter=github-pr-check < ${{ steps.pinact.outputs.diff_file }}
+          reviewdog -f=diff -f.diff.strip=1 -name="pinact" -reporter=github-pr-review < ${{ steps.pinact.outputs.diff_file }}
 
       - name: Report ghatm suggestions with reviewdog
         if: steps.ghatm.outputs.has_changes == 'true'
@@ -110,4 +110,4 @@ jobs:
         shell: bash
         run: |
           set -x
-          reviewdog -f=diff -f.diff.strip=1 -name="ghatm" -reporter=github-pr-check < ${{ steps.ghatm.outputs.diff_file }}
+          reviewdog -f=diff -f.diff.strip=1 -name="ghatm" -reporter=github-pr-review < ${{ steps.ghatm.outputs.diff_file }}
