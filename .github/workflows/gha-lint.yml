@@ -2,6 +2,7 @@ name: Lint GHA workflow files
 on: workflow_call
 jobs:
   lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     permissions:
