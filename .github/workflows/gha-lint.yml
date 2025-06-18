@@ -92,7 +92,7 @@ jobs:
         shell: bash
         run: |
           set -x
-          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix pin" -reporter=github-pr-review < ${{ steps.pin.outputs.diff_file }}
+          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix pin" -reporter=github-pr-review -filter-mode=nofilter < ${{ steps.pin.outputs.diff_file }}
 
       - name: Report gha-fix timeout suggestions with reviewdog
         if: steps.timeout.outputs.has_changes == 'true'
@@ -101,5 +101,4 @@ jobs:
         shell: bash
         run: |
           set -x
-          cat ${{ steps.timeout.outputs.diff_file }}
-          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix timeout" -reporter=github-pr-review -tee < ${{ steps.timeout.outputs.diff_file }}
+          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix timeout" -reporter=github-pr-review -tee -filter-mode=nofilter < ${{ steps.timeout.outputs.diff_file }}
