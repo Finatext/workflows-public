@@ -101,4 +101,5 @@ jobs:
         shell: bash
         run: |
           set -x
-          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix timeout" -reporter=github-pr-review < ${{ steps.timeout.outputs.diff_file }}
+          cat ${{ steps.timeout.outputs.diff_file }}
+          reviewdog -f=diff -f.diff.strip=1 -name="gha-fix timeout" -reporter=github-pr-review -tee < ${{ steps.timeout.outputs.diff_file }}
